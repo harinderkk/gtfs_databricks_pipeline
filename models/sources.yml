@@ -1,0 +1,72 @@
+version: 2
+
+sources:
+  - name: gold
+    database: bc_transit_ws
+    schema: gold
+    description: "Gold layer Delta tables from TransLink GTFS pipeline"
+    tables:
+      - name: fact_trip_schedule
+        description: "All scheduled stop visits with route and calendar context"
+        columns:
+          - name: trip_id
+            description: "Unique trip identifier"
+          - name: route_short_name_display
+            description: "Route number e.g. 099, R1, N10"
+          - name: route_long_name
+            description: "Full route name"
+          - name: arrival_time
+            description: "Scheduled arrival time HH:MM:SS"
+          - name: stop_id
+            description: "Stop identifier"
+          - name: monday
+            description: "1 if service runs on Monday"
+          - name: saturday
+            description: "1 if service runs on Saturday"
+          - name: sunday
+            description: "1 if service runs on Sunday"
+
+      - name: live_positions
+        description: "Live vehicle positions decoded from TransLink Protobuf API"
+        columns:
+          - name: ingestion_timestamp
+            description: "UTC timestamp of vehicle position capture"
+          - name: vehicle_id
+            description: "Unique vehicle identifier"
+          - name: trip_id
+            description: "Active trip identifier"
+          - name: route_name
+            description: "Route number"
+          - name: route_long_name
+            description: "Full route name"
+          - name: latitude
+            description: "Vehicle latitude"
+          - name: longitude
+            description: "Vehicle longitude"
+          - name: current_status
+            description: "INCOMING_AT, STOPPED_AT, or IN_TRANSIT_TO"
+
+      - name: dim_date
+        description: "Date dimension spanning full service calendar"
+        columns:
+          - name: date
+            description: "Calendar date"
+          - name: day_name
+            description: "Monday, Tuesday etc"
+          - name: is_weekend
+            description: "True if Saturday or Sunday"
+      - name: route_reliability_index
+        description: "Trip observation rates per route across 7am, 12pm, 5pm windows"
+        columns:
+          - name: route_name
+            description: "Route number"
+          - name: route_long_name
+            description: "Full route name"
+          - name: morning_7am_pct
+            description: "% of scheduled trips observed at 7am"
+          - name: midday_12pm_pct
+            description: "% of scheduled trips observed at 12pm"
+          - name: evening_5pm_pct
+            description: "% of scheduled trips observed at 5pm"
+          - name: trip_observation_rate
+            description: "Weighted average observation rate across all windows"
