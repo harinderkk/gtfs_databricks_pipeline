@@ -20,7 +20,9 @@ models:
   bc_transit:
     staging:
       +materialized: view
-      +schema: gold
+      +database: bc_transit_ws
+      +schema: staging
     marts:
       +materialized: table
+      +database: bc_transit_ws
       +schema: gold
