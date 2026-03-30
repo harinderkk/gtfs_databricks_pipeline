@@ -38,10 +38,10 @@ with_totals as (
         last_departure,
         sum(unique_trips_scheduled) over (
             partition by route_name, day_type
-        ) as total_daily_trips,
+        )                                           as total_daily_trips,
         rank() over (
             order by unique_trips_scheduled desc
-        ) as frequency_rank
+        )                                           as frequency_rank
     from route_summary
 )
 
