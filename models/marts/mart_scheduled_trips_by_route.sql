@@ -1,3 +1,12 @@
+{{
+    config(
+        materialized='table',
+        schema='gold',
+        database='bc_transit_ws',
+        description='Scheduled trips per route broken down by day type and fetch window. Shows frequency rank and stops served.'
+    )
+}}
+
 with schedule as (
     select * from {{ ref('stg_fact_trip_schedule') }}
     where fetch_window != 'other'
