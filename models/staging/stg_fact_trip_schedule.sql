@@ -9,7 +9,6 @@ renamed as (
         route_long_name,
         arrival_time,
         stop_id,
-        stop_name,
         cast(substr(arrival_time, 1, 2) as integer) as scheduled_hour,
         cast(substr(arrival_time, 4, 2) as integer) as scheduled_minute,
         case
