@@ -17,7 +17,7 @@ clean-targets:
   - "dbt_packages"
 
 models:
-  bc_transit:
+  gtfs_databricks_pipeline:
     staging:
       +materialized: view
       +database: bc_transit_ws
