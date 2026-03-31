@@ -1,0 +1,28 @@
+name: 'gtfs_databricks_pipeline'
+version: '1.0.0'
+config-version: 2
+
+profile: 'bc_transit'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  gtfs_databricks_pipeline:
+    staging:
+      +materialized: view
+      +database: bc_transit_ws
+      +schema: staging
+    marts:
+      +materialized: table
+      +database: bc_transit_ws
+      +schema: gold
