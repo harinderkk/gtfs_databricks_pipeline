@@ -48,7 +48,7 @@ models:
         tests:
           - not_null
 
-- name: mart_route_reliability
+  - name: mart_route_reliability
     description: "Route reliability index with weighted observation score"
     columns:
       - name: route_name
