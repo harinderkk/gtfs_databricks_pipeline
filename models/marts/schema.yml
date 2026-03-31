@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: mart_network_activity_by_snapshot
+    description: "Latest known position for every active vehicle in the last 2 hours"
+    columns:
+      - name: vehicle_id
+        description: "Unique vehicle identifier"
+        tests:
+          - not_null
+          - unique
+      - name: route_name
+        description: "Route number"
+        tests:
+          - not_null
+      - name: latitude
+        description: "Vehicle latitude"
+        tests:
+          - not_null
+      - name: longitude
+        description: "Vehicle longitude"
+        tests:
+          - not_null
+
+  - name: mart_scheduled_trips_by_route
+    description: "Scheduled trips per route broken down by day type and fetch window"
+    columns:
+      - name: route_name
+        description: "Route number"
+        tests:
+          - not_null
+      - name: day_type
+        description: "weekday or weekend"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['weekday', 'weekend']
+      - name: fetch_window
+        description: "7am, 12pm or 5pm"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['7am', '12pm', '5pm']
+      - name: unique_trips_scheduled
+        description: "Count of distinct scheduled trips"
+        tests:
+          - not_null
+
+  - name: mart_route_reliability
+    description: "Route reliability index with weighted observation score"
+    columns:
+      - name: route_name
+        description: "Route number"
+        tests:
+          - not_null
+          - unique
+      - name: reliability_score
+        description: "Weighted reliability score 0-100"
+        tests:
+          - not_null
+      - name: observation_tier
+        description: "High, Medium or Low"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['High', 'Medium', 'Low']
