@@ -1,4 +1,4 @@
-name: 'bc_transit'
+name: 'gtfs_databricks_pipeline'
 version: '1.0.0'
 config-version: 2
 
