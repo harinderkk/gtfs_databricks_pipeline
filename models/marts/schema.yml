@@ -48,7 +48,7 @@ models:
         tests:
           - not_null
 
-  - name: mart_route_reliability
+- name: mart_route_reliability
     description: "Route reliability index with weighted observation score"
     columns:
       - name: route_name
@@ -56,8 +56,8 @@ models:
         tests:
           - not_null
           - unique
-      - name: reliability_score
-        description: "Weighted reliability score 0-100"
+      - name: trip_observation_rate
+        description: "Weighted average observation rate across all windows"
         tests:
           - not_null
       - name: observation_tier
@@ -65,5 +65,9 @@ models:
         tests:
           - not_null
           - accepted_values:
-             arguments:
-              values: ['High', 'Medium', 'Low']
+              arguments:
+                values: ['High', 'Medium', 'Low']
+      - name: reliability_rank
+        description: "Rank by trip observation rate"
+        tests:
+          - not_null
