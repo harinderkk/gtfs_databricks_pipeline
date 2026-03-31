@@ -34,12 +34,14 @@ models:
         tests:
           - not_null
           - accepted_values:
+             arguments:
               values: ['weekday', 'weekend']
       - name: fetch_window
         description: "7am, 12pm or 5pm"
         tests:
           - not_null
           - accepted_values:
+             arguments:
               values: ['7am', '12pm', '5pm']
       - name: unique_trips_scheduled
         description: "Count of distinct scheduled trips"
@@ -63,4 +65,5 @@ models:
         tests:
           - not_null
           - accepted_values:
+             arguments:
               values: ['High', 'Medium', 'Low']
