@@ -29,7 +29,7 @@
         "task_key": "Bronze_Ingestion",
         "run_if": "ALL_SUCCESS",
         "notebook_task": {
-          "notebook_path": "/Workspace/Users/kaurharinder900@gmail.com/gtfs_databricks_pipeline/gtfs_pipeline/Notebook 4 GTFS_Realtime_Stream",
+          "notebook_path": "/Workspace/Users/kaurharinder/gtfs_databricks_pipeline/gtfs_pipeline/Notebook 4 GTFS_Realtime_Stream",
           "base_parameters": {
             "gtfs_pipeline": "REDACTED"
           },
@@ -50,7 +50,7 @@
         ],
         "run_if": "ALL_SUCCESS",
         "notebook_task": {
-          "notebook_path": "/Workspace/Users/kaurharinder900@gmail.com/gtfs_databricks_pipeline/gtfs_pipeline/Notebook 5 GTFS_Gold_Realtime",
+          "notebook_path": "/Workspace/Users/kaurharinder/gtfs_databricks_pipeline/gtfs_pipeline/Notebook 5 GTFS_Gold_Realtime",
           "base_parameters": {
             "gtfs_pipeline": "REDACTED"
           },
@@ -71,7 +71,7 @@
         ],
         "run_if": "ALL_SUCCESS",
         "notebook_task": {
-          "notebook_path": "/Workspace/Users/kaurharinder900@gmail.com/gtfs_databricks_pipeline/gtfs_pipeline/Notebook 6",
+          "notebook_path": "/Workspace/Users/kaurharinder/gtfs_databricks_pipeline/gtfs_pipeline/Notebook 6",
           "base_parameters": {
             "gtfs_pipeline": "REDACTED"
           },
