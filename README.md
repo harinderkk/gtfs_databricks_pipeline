@@ -10,7 +10,7 @@ on-time analysis across 200+ bus routes.
 ---
 
 
-![Dashboard](dashboards/TransLink Transit Performance Dashboard Overview.jpg)
+![Dashboard](dashboards/TransLink-Transit-Performance-Dashboard-Overview.jpg)
 
 
 ## What this project does
