@@ -106,7 +106,7 @@ Surrey (88 Ave), Richmond (No. 6 Rd), and Vancouver (Main St), where a notable
 share of buses arrive several minutes behind schedule.
 
 **Bus bunching.**
-The 099 B-Line (UBC / Commercial-Broadway) -- Metro Vancouver's busiest bus route --
+The 099 B-Line (UBC / Commercial-Broadway) which is  Metro Vancouver's busiest bus route
 shows the highest bunching rate: roughly 1 in 5 buses arrives within 2 minutes of
 the previous bus on the same route.
 
@@ -120,7 +120,7 @@ routes, headway consistency matters more to riders than exact schedule adherence
 ## Methodology
 
 **On-time definition.** A bus is counted as on-time if it arrives between 1 minute
-early and 5 minutes late relative to the scheduled time -- the standard asymmetric
+early and 5 minutes late relative to the scheduled time the standard asymmetric
 window used in transit on-time reporting (early departures are penalized more
 heavily because riders who arrive on time miss them).
 
@@ -142,7 +142,7 @@ window are retained in the Gold layer but excluded from schedule-dependent metri
 
 ## Scope and limitations
 
-This analysis is built entirely from TransLink's public GTFS feeds -- the static
+This analysis is built entirely from TransLink's public GTFS feeds the static
 schedule and the real-time vehicle position stream. It is an observational study
 of *what the data shows*, not an explanation of *why*.
 
@@ -176,7 +176,7 @@ look at observed patterns, not as an official assessment of TransLink service.
 
 ## dbt models
 
-The dbt project demonstrates the staging-to-mart transformation pattern -- building
+The dbt project demonstrates the staging-to-mart transformation pattern building
 analytical marts on top of the Gold layer with Unity Catalog lineage. It was
 developed during the project as an introduction to dbt; the final analytical
 results are produced in the pipeline notebooks.
