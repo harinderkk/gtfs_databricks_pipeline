@@ -9,6 +9,10 @@ on-time analysis across 200+ bus routes.
 
 ---
 
+
+![Dashboard](dashboards/TransLink Transit Performance Dashboard Overview.jpg)
+
+
 ## What this project does
 
 TransLink (Metro Vancouver's transit authority) publishes a live GTFS Real-Time feed
@@ -196,6 +200,7 @@ gtfs_databricks_pipeline/
 ```
 
 ---
+
 
 ## Notes
 
