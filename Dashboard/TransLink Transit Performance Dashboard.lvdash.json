@@ -1,0 +1,2199 @@
+{
+  "datasets": [
+    {
+      "name": "dd8fe572",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `bronze`;\n",
+        "\n",
+        "SELECT \n",
+        "    stop_name,\n",
+        "    stop_lat,\n",
+        "    stop_lon,\n",
+        "    avg_delay_min,\n",
+        "    observation_count,\n",
+        "    routes_serving\n",
+        "FROM bc_transit_ws.gold.stop_delay_hotspots\n",
+        "WHERE avg_delay_min >= 5\n",
+        "ORDER BY avg_delay_min DESC\n",
+        "LIMIT 50"
+      ]
+    },
+    {
+      "name": "7c5255af",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "SELECT \n",
+        "    CONCAT(route_name, ' - ', route_long_name) AS route,\n",
+        "    bunching_rate_pct,\n",
+        "    avg_headway_min,\n",
+        "    p95_gap_min,\n",
+        "    bunching_events\n",
+        "FROM bc_transit_ws.gold.route_bus_bunching\n",
+        "ORDER BY bunching_rate_pct DESC\n",
+        "LIMIT 15"
+      ]
+    },
+    {
+      "name": "d18a4e15",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "SELECT \n",
+        "    CASE \n",
+        "        WHEN delay_minutes < -1 THEN '1. Early (1+ min)'\n",
+        "        WHEN delay_minutes BETWEEN -1 AND 5 THEN '2. On time (1 early–5 late)'\n",
+        "        WHEN delay_minutes > 5 AND delay_minutes <= 10 THEN '3. Late (5-10 min)'\n",
+        "        WHEN delay_minutes > 10 AND delay_minutes <= 20 THEN '4. Very late (10-20 min)'\n",
+        "        ELSE '5. Severely late (20+ min)'\n",
+        "    END AS delay_category,\n",
+        "    COUNT(*) AS stop_visits\n",
+        "FROM bc_transit_ws.gold.stop_level_on_time\n",
+        "WHERE delay_minutes IS NOT NULL\n",
+        "GROUP BY \n",
+        "    CASE \n",
+        "        WHEN delay_minutes < -1 THEN '1. Early (1+ min)'\n",
+        "        WHEN delay_minutes BETWEEN -1 AND 5 THEN '2. On time (1 mearly-5 late)'\n",
+        "        WHEN delay_minutes > 5 AND delay_minutes <= 10 THEN '3. Late (5-10 min)'\n",
+        "        WHEN delay_minutes > 10 AND delay_minutes <= 20 THEN '4. Very late (10-20 min)'\n",
+        "        ELSE '5. Severely late (20+ min)'\n",
+        "    END\n",
+        "ORDER BY delay_category"
+      ]
+    },
+    {
+      "name": "037d6987",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "WITH routes_with_all_windows AS (\n",
+        "    SELECT route_name\n",
+        "    FROM bc_transit_ws.gold.route_time_of_day_performance\n",
+        "    WHERE fetch_window IN ('7am', '12pm', '5pm')\n",
+        "    GROUP BY route_name\n",
+        "    HAVING COUNT(DISTINCT fetch_window) = 3\n",
+        ")\n",
+        "SELECT \n",
+        "    CONCAT(r.route_name, ' - ', r.route_long_name) AS route,\n",
+        "    r.avg_delay_minutes AS avg_deviation_min,\n",
+        "    r.on_time_pct\n",
+        "FROM bc_transit_ws.gold.route_on_time_performance r\n",
+        "JOIN routes_with_all_windows w ON r.route_name = w.route_name\n",
+        "WHERE r.total_stop_observations >= 1000\n",
+        "ORDER BY r.avg_delay_minutes DESC\n",
+        "LIMIT 10"
+      ]
+    },
+    {
+      "name": "8ad0816d",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `bronze`;\n",
+        "\n",
+        "SELECT \n",
+        "    obs_date,\n",
+        "    ROUND(SUM(is_on_time) * 100.0 / COUNT(*), 2) AS daily_on_time_pct,\n",
+        "    ROUND(AVG(ABS(delay_minutes)), 2) AS daily_avg_deviation\n",
+        "FROM bc_transit_ws.gold.stop_level_on_time\n",
+        "WHERE delay_minutes IS NOT NULL\n",
+        "AND ABS(delay_minutes) <= 60\n",
+        "AND HOUR(actual_arrival) IN (7, 12, 17)\n",
+        "GROUP BY obs_date\n",
+        "ORDER BY obs_date"
+      ]
+    },
+    {
+      "name": "ab283fb7",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "WITH routes_with_all_windows AS (\n",
+        "    SELECT route_name\n",
+        "    FROM bc_transit_ws.gold.route_time_of_day_performance\n",
+        "    WHERE fetch_window IN ('7am', '12pm', '5pm')\n",
+        "    GROUP BY route_name\n",
+        "    HAVING COUNT(DISTINCT fetch_window) = 3\n",
+        ")\n",
+        "SELECT \n",
+        "    CONCAT(r.route_name, ' - ', r.route_long_name) AS route,\n",
+        "    r.avg_delay_minutes AS avg_deviation_min,\n",
+        "    r.on_time_pct\n",
+        "FROM bc_transit_ws.gold.route_on_time_performance r\n",
+        "JOIN routes_with_all_windows w ON r.route_name = w.route_name\n",
+        "WHERE r.total_stop_observations >= 1000\n",
+        "ORDER BY r.avg_delay_minutes ASC\n",
+        "LIMIT 10"
+      ]
+    },
+    {
+      "name": "60e66c91",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "SELECT COUNT(*) AS stop_visits_analyzed\n",
+        "FROM bc_transit_ws.gold.stop_level_on_time;\n"
+      ]
+    },
+    {
+      "name": "2ccc789b",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "SELECT ROUND(AVG(ABS(delay_minutes)), 1) AS avg_deviation_min\n",
+        "FROM bc_transit_ws.gold.stop_level_on_time\n",
+        "WHERE delay_minutes IS NOT NULL;"
+      ]
+    },
+    {
+      "name": "dbfa03df",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "SELECT COUNT(DISTINCT route_name) AS routes_tracked\n",
+        "FROM bc_transit_ws.gold.route_on_time_performance;"
+      ]
+    },
+    {
+      "name": "80cd9a6c",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `bronze`;\n",
+        "\n",
+        "SELECT\n",
+        "DATE_FORMAT (obs_date, 'EEEE') AS day_of_week,\n",
+        "DAYOFWEEK (obs_date) AS dow_num,\n",
+        "ROUND (SUM (is_on_time) * 100.0 / COUNT (*), 2) AS on_time_pct,\n",
+        "ROUND (AVG (ABS (delay_minutes)), 2) AS avg_deviation\n",
+        "FROM bc_transit_ws.gold.stop_level_on_time\n",
+        "WHERE delay_minutes IS NOT NULL\n",
+        "GROUP BY DATE_FORMAT (obs_date, 'EEEE'), DAYOFWEEK(obs_date)\n",
+        "ORDER BY dow_num;"
+      ]
+    },
+    {
+      "name": "b341d2e9",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "WITH routes_with_all_windows AS (\n",
+        "    SELECT route_name\n",
+        "    FROM bc_transit_ws.gold.route_time_of_day_performance\n",
+        "    WHERE fetch_window IN ('7am', '12pm', '5pm')\n",
+        "    GROUP BY route_name\n",
+        "    HAVING COUNT(DISTINCT fetch_window) = 3\n",
+        "),\n",
+        "top_routes AS (\n",
+        "    SELECT r.route_name, r.avg_delay_minutes AS overall_deviation\n",
+        "    FROM bc_transit_ws.gold.route_on_time_performance r\n",
+        "    JOIN routes_with_all_windows w ON r.route_name = w.route_name\n",
+        "    WHERE r.total_stop_observations >= 1000\n",
+        "    ORDER BY r.avg_delay_minutes ASC\n",
+        "    LIMIT 5\n",
+        ")\n",
+        "SELECT \n",
+        "    CONCAT(t.route_name, ' - ', t.route_long_name) AS route,\n",
+        "    CASE t.fetch_window \n",
+        "        WHEN '7am'  THEN 'A. Morning (7am)'\n",
+        "        WHEN '12pm' THEN 'B. Midday (12pm)'\n",
+        "        WHEN '5pm'  THEN 'C. Evening (5pm)'\n",
+        "    END AS fetch_window,\n",
+        "    t.pct_on_time,\n",
+        "    tr.overall_deviation\n",
+        "FROM bc_transit_ws.gold.route_time_of_day_performance t\n",
+        "JOIN top_routes tr ON t.route_name = tr.route_name\n",
+        "WHERE t.fetch_window IN ('7am', '12pm', '5pm')\n",
+        "ORDER BY tr.overall_deviation ASC, t.route_name, fetch_window"
+      ]
+    },
+    {
+      "name": "6a4fcf26",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `bronze`;\n",
+        "\n",
+        "WITH popular_routes AS (\n",
+        "    SELECT route_name, route_rank\n",
+        "    FROM (VALUES\n",
+        "        ('099', 1),\n",
+        "        ('R4',  2),\n",
+        "        ('049', 3),\n",
+        "        ('025', 4),\n",
+        "        ('016', 5),\n",
+        "        ('R6',  6),\n",
+        "        ('R1',  7),\n",
+        "        ('323', 8),\n",
+        "        ('019', 9),\n",
+        "        ('R5',  10)\n",
+        "    ) AS t(route_name, route_rank)\n",
+        ")\n",
+        "SELECT \n",
+        "    CONCAT(p.route_name, ' - ', t.route_long_name) AS route,\n",
+        "    CASE t.fetch_window \n",
+        "        WHEN '7am' THEN 'A. Morning (7am)'\n",
+        "        WHEN '12pm' THEN 'B. Midday (12pm)'\n",
+        "        WHEN '5pm' THEN 'C. Evening (5pm)'\n",
+        "    END AS time_window,\n",
+        "    t.pct_on_time\n",
+        "FROM bc_transit_ws.gold.route_time_of_day_performance t\n",
+        "JOIN popular_routes p ON t.route_name = p.route_name\n",
+        "WHERE t.fetch_window IN ('7am', '12pm', '5pm')\n",
+        "ORDER BY p.route_rank, time_window"
+      ]
+    },
+    {
+      "name": "2c7feb57",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `bronze`;\n",
+        "\n",
+        "SELECT \n",
+        "    CONCAT(route_name, ' - ', route_long_name) AS route,\n",
+        "    avg_scheduled_headway_min AS scheduled_wait,\n",
+        "    avg_actual_headway_min AS actual_wait,\n",
+        "    ROUND(avg_actual_headway_min - avg_scheduled_headway_min, 2) AS slip_min\n",
+        "FROM bc_transit_ws.gold.route_passenger_wait_times\n",
+        "WHERE total_gaps >= 1000\n",
+        "ORDER BY avg_actual_headway_min ASC\n",
+        "LIMIT 15"
+      ]
+    },
+    {
+      "name": "98e05cf1",
+      "displayName": "Untitled dataset",
+      "queryLines": [
+        "USE CATALOG `bc_transit_ws`;\n",
+        "USE SCHEMA `default`;\n",
+        "\n",
+        "SELECT\n",
+        "    delay_category,\n",
+        "    COUNT(*) AS stop_visits\n",
+        "FROM (\n",
+        "\n",
+        "    SELECT \n",
+        "        CASE \n",
+        "            WHEN delay_minutes < -1 THEN '1. Early (1+ min)'\n",
+        "            WHEN delay_minutes BETWEEN -1 AND 5 THEN '2. On time (1 early-5 late)'\n",
+        "            WHEN delay_minutes > 5 AND delay_minutes <= 10 THEN '3. Late (5-10 min)'\n",
+        "            WHEN delay_minutes > 10 AND delay_minutes <= 20 THEN '4. Very late (10-20 min)'\n",
+        "            ELSE '5. Severely late (20+ min)'\n",
+        "        END AS delay_category\n",
+        "\n",
+        "    FROM bc_transit_ws.gold.stop_level_on_time\n",
+        "\n",
+        "    WHERE delay_minutes IS NOT NULL\n",
+        "\n",
+        ") t\n",
+        "\n",
+        "GROUP BY delay_category\n",
+        "\n",
+        "ORDER BY delay_category;"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "81aac3f1",
+      "displayName": "Main Dashboard",
+      "layout": [
+        {
+          "widget": {
+            "name": "eff8dadc",
+            "queries": [
+              {
+                "name": "2e5af93fb00b46e5ac200ff0994fdd70",
+                "query": {
+                  "datasetName": "dd8fe572",
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 0,
+              "viz_spec": {
+                "display_name": "Stops with Most Delays",
+                "viz_type": "MAP",
+                "serialized_options": "{\"backgroundColor\":\"#356AFF\",\"lonColName\":\"stop_lon\",\"clusterMarkers\":false,\"mapTileUrl\":\"//{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png\",\"popup\":{\"enabled\":true,\"template\":\"\"},\"customizeMarkers\":false,\"groups\":{},\"bounds\":{\"_northEast\":{\"lat\":49.22388466579196,\"lng\":-122.7471676090906},\"_southWest\":{\"lat\":49.11231875854133,\"lng\":-123.03796198164919}},\"foregroundColor\":\"#ffffff\",\"latColName\":\"stop_lat\",\"tooltip\":{\"enabled\":false,\"template\":\"\"},\"iconFont\":\"circle\",\"iconShape\":\"marker\",\"borderColor\":\"#356AFF\",\"showPlotlyControls\":true}",
+                "query_name": "2e5af93fb00b46e5ac200ff0994fdd70"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "0a665e80",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "7c5255af",
+                  "fields": [
+                    {
+                      "name": "sum(bunching_rate_pct)",
+                      "expression": "SUM(`bunching_rate_pct`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Most Bunched Routes in Metro Vancouver",
+                "showTitle": true
+              },
+              "mark": {
+                "colors": [
+                  "#FFAB00"
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(bunching_rate_pct)",
+                  "axis": {
+                    "title": "% of trips bunched (arriving within 2 min of previous bus)"
+                  },
+                  "displayName": "% of trips bunched (arriving within 2 min of previous bus)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 35,
+            "width": 10,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "c1481ed2",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "037d6987",
+                  "fields": [
+                    {
+                      "name": "sum(avg_deviation_min)",
+                      "expression": "SUM(`avg_deviation_min`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Routes with the Highest Average Delay (Minutes)",
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Routes with the highest average deviation from schedule."
+              },
+              "mark": {
+                "colors": [
+                  "#0496C7"
+                ],
+                "layout": "stack"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(avg_deviation_min)",
+                  "axis": {
+                    "title": "Average Delay in Minutes"
+                  },
+                  "displayName": "Average Delay in Minutes",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 5,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "b53d0384",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8ad0816d",
+                  "fields": [
+                    {
+                      "name": "obs_date",
+                      "expression": "`obs_date`"
+                    },
+                    {
+                      "name": "sum(daily_on_time_pct)",
+                      "expression": "SUM(`daily_on_time_pct`)"
+                    },
+                    {
+                      "name": "sum(daily_avg_deviation)",
+                      "expression": "SUM(`daily_avg_deviation`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "One-Month Transit Reliability Trends",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "layer"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "obs_date",
+                  "axis": {
+                    "title": "Observation Date"
+                  },
+                  "displayName": "Observation Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(daily_on_time_pct)",
+                      "displayName": "Daily On-time Percentage"
+                    },
+                    {
+                      "fieldName": "sum(daily_avg_deviation)",
+                      "displayName": "Average deviation from scheduled arrival time (minutes)"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "On-Time Percentage (%) and Daily Average Deviation"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 27,
+            "width": 10,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "3b32036c",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ab283fb7",
+                  "fields": [
+                    {
+                      "name": "sum(avg_deviation_min)",
+                      "expression": "SUM(`avg_deviation_min`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Routes with the Lowest Average Delay (Minutes)",
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Routes with the smallest average deviation from schedule."
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(avg_deviation_min)",
+                  "axis": {
+                    "title": "Average Delay in Minutes"
+                  },
+                  "displayName": "Average Delay in Minutes",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 11,
+            "width": 5,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "3ded5b79",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "60e66c91",
+                  "fields": [
+                    {
+                      "name": "stop_visits_analyzed",
+                      "expression": "`stop_visits_analyzed`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Stop Visits Analyzed",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "stop_visits_analyzed",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "rowNumber": 1
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "169e82d1",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2ccc789b",
+                  "fields": [
+                    {
+                      "name": "avg_deviation_min",
+                      "expression": "`avg_deviation_min`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Average Deviation from Schedule in Minutes",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_deviation_min",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "rowNumber": 1
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 9,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "23b85bab",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dbfa03df",
+                  "fields": [
+                    {
+                      "name": "routes_tracked",
+                      "expression": "`routes_tracked`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Number of Routes Tracked",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "routes_tracked",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "rowNumber": 1
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 9,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "9ab8caa6",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "80cd9a6c",
+                  "fields": [
+                    {
+                      "name": "day_of_week",
+                      "expression": "`day_of_week`"
+                    },
+                    {
+                      "name": "sum(on_time_pct)",
+                      "expression": "SUM(`on_time_pct`)"
+                    },
+                    {
+                      "name": "sum(avg_deviation)",
+                      "expression": "SUM(`avg_deviation`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Transit Reliability Trends by Day of Week",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "layer"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "day_of_week",
+                  "axis": {
+                    "title": "Day of Week",
+                    "labelAngle": 45
+                  },
+                  "displayName": "Day of Week",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                        "Sunday"
+                      ]
+                    }
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(on_time_pct)",
+                      "displayName": "On-time Percentage (%)"
+                    },
+                    {
+                      "fieldName": "sum(avg_deviation)",
+                      "displayName": "Average deviation from scheduled arrival time (minutes)"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "On-time percentage (%) & Average Deviation "
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 10,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "abfba41f",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b341d2e9",
+                  "fields": [
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    },
+                    {
+                      "name": "fetch_window",
+                      "expression": "`fetch_window`"
+                    },
+                    {
+                      "name": "sum(pct_on_time)",
+                      "expression": "SUM(`pct_on_time`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Time-of-Day Performance for the Most Schedule-Reliable Routes\n",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "layer"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "fetch_window",
+                  "axis": {
+                    "title": "Fetch Window",
+                    "labelAngle": 45
+                  },
+                  "displayName": "Fetch Window",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(pct_on_time)",
+                  "axis": {
+                    "title": "On-time Percentage (%)"
+                  },
+                  "displayName": "pct_on_time",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "route",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 58,
+            "width": 10,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "6116872e",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "6a4fcf26",
+                  "fields": [
+                    {
+                      "name": "time_window",
+                      "expression": "`time_window`"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    },
+                    {
+                      "name": "sum(pct_on_time)",
+                      "expression": "SUM(`pct_on_time`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Time-of-Day Performance of Selected Busy Bus Routes",
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Comparison of on-time performance across morning (7am), midday (12pm), and evening (5pm) service periods."
+              },
+              "mark": {
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(pct_on_time)",
+                  "axis": {
+                    "title": "On-Time Performance (%)"
+                  },
+                  "displayName": "pct_on_time",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "time_window",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "A. Morning (7am)",
+                        "color": "#F9DC40"
+                      },
+                      {
+                        "value": "B. Midday (12pm)",
+                        "color": "#42A1D7"
+                      },
+                      {
+                        "value": "C. Evening (5pm)",
+                        "color": "#FF905F"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 42,
+            "width": 10,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "7d6f60a8",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2c7feb57",
+                  "fields": [
+                    {
+                      "name": "sum(scheduled_wait)",
+                      "expression": "SUM(`scheduled_wait`)"
+                    },
+                    {
+                      "name": "sum(actual_wait)",
+                      "expression": "SUM(`actual_wait`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Scheduled vs Actual Bus Frequency",
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Comparison of scheduled and observed time between bus arrivals on high-frequency routes."
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 1
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(scheduled_wait)",
+                      "displayName": "Scheduled Waiting Time"
+                    },
+                    {
+                      "fieldName": "sum(actual_wait)",
+                      "displayName": "Actual Waiting Time"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "Scheduled vs Actual Wait Times"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": " Route Name"
+                  },
+                  "displayName": " Route Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 51,
+            "width": 10,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "851fab37",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "98e05cf1",
+                  "fields": [
+                    {
+                      "name": "delay_category",
+                      "expression": "`delay_category`"
+                    },
+                    {
+                      "name": "sum(stop_visits)",
+                      "expression": "SUM(`stop_visits`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Network Delay Distribution - 1.3M Stop Visits Analyzed",
+                "showTitle": true
+              },
+              "mark": {
+                "colors": [
+                  "#FF3621"
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "delay_category",
+                  "axis": {
+                    "title": "Delay Category"
+                  },
+                  "displayName": "Delay Category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(stop_visits)",
+                  "displayName": "Stop Visits",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 4,
+            "height": 9
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "68fc70a5",
+      "displayName": "Clone",
+      "layout": [
+        {
+          "widget": {
+            "name": "1bdf8de9",
+            "queries": [
+              {
+                "name": "2e5af93fb00b46e5ac200ff0994fdd70",
+                "query": {
+                  "datasetName": "dd8fe572",
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 0,
+              "viz_spec": {
+                "display_name": "Stops with Most Delays",
+                "viz_type": "MAP",
+                "serialized_options": "{\"backgroundColor\":\"#356AFF\",\"lonColName\":\"stop_lon\",\"clusterMarkers\":false,\"mapTileUrl\":\"//{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png\",\"popup\":{\"enabled\":true,\"template\":\"\"},\"customizeMarkers\":false,\"groups\":{},\"bounds\":{\"_northEast\":{\"lat\":49.22388466579196,\"lng\":-122.7471676090906},\"_southWest\":{\"lat\":49.11231875854133,\"lng\":-123.03796198164919}},\"foregroundColor\":\"#ffffff\",\"latColName\":\"stop_lat\",\"tooltip\":{\"enabled\":false,\"template\":\"\"},\"iconFont\":\"circle\",\"iconShape\":\"marker\",\"borderColor\":\"#356AFF\",\"showPlotlyControls\":true}",
+                "query_name": "2e5af93fb00b46e5ac200ff0994fdd70"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "6f2ef3fd",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "7c5255af",
+                  "fields": [
+                    {
+                      "name": "sum(bunching_rate_pct)",
+                      "expression": "SUM(`bunching_rate_pct`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Most Bunched Routes in Metro Vancouver",
+                "showTitle": true
+              },
+              "mark": {
+                "colors": [
+                  "#FFAB00"
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(bunching_rate_pct)",
+                  "axis": {
+                    "title": "% of trips bunched (arriving within 2 min of previous bus)"
+                  },
+                  "displayName": "% of trips bunched (arriving within 2 min of previous bus)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 29,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "449f9850",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "037d6987",
+                  "fields": [
+                    {
+                      "name": "sum(avg_deviation_min)",
+                      "expression": "SUM(`avg_deviation_min`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Routes with the Highest Average Delay (Minutes)",
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Routes with the highest average deviation from schedule."
+              },
+              "mark": {
+                "colors": [
+                  "#0496C7"
+                ],
+                "layout": "stack"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(avg_deviation_min)",
+                  "axis": {
+                    "title": "Average Delay in Minutes"
+                  },
+                  "displayName": "Average Delay in Minutes",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "aa941cdb",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8ad0816d",
+                  "fields": [
+                    {
+                      "name": "obs_date",
+                      "expression": "`obs_date`"
+                    },
+                    {
+                      "name": "sum(daily_on_time_pct)",
+                      "expression": "SUM(`daily_on_time_pct`)"
+                    },
+                    {
+                      "name": "sum(daily_avg_deviation)",
+                      "expression": "SUM(`daily_avg_deviation`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "One-Month Transit Reliability Trends",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "layer"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "obs_date",
+                  "axis": {
+                    "title": "Observation Date"
+                  },
+                  "displayName": "Observation Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(daily_on_time_pct)",
+                      "displayName": "Daily On-time Percentage"
+                    },
+                    {
+                      "fieldName": "sum(daily_avg_deviation)",
+                      "displayName": "Average deviation from scheduled arrival time (minutes)"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "On-Time Percentage (%) and Daily Average Deviation"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 23,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "3715a06c",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ab283fb7",
+                  "fields": [
+                    {
+                      "name": "sum(avg_deviation_min)",
+                      "expression": "SUM(`avg_deviation_min`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Routes with the Lowest Average Delay (Minutes)",
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Routes with the smallest average deviation from schedule."
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(avg_deviation_min)",
+                  "axis": {
+                    "title": "Average Delay in Minutes"
+                  },
+                  "displayName": "Average Delay in Minutes",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 9,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "a5b772c6",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "60e66c91",
+                  "fields": [
+                    {
+                      "name": "stop_visits_analyzed",
+                      "expression": "`stop_visits_analyzed`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Stop Visits Analyzed",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "stop_visits_analyzed",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "rowNumber": 1
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "f41e0a0e",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2ccc789b",
+                  "fields": [
+                    {
+                      "name": "avg_deviation_min",
+                      "expression": "`avg_deviation_min`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Average Deviation from Schedule in Minutes",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_deviation_min",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  },
+                  "rowNumber": 1
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 7,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "730a13ba",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dbfa03df",
+                  "fields": [
+                    {
+                      "name": "routes_tracked",
+                      "expression": "`routes_tracked`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Number of Routes Tracked",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "routes_tracked",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 0
+                    }
+                  },
+                  "rowNumber": 1
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 7,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "d49e413a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "80cd9a6c",
+                  "fields": [
+                    {
+                      "name": "day_of_week",
+                      "expression": "`day_of_week`"
+                    },
+                    {
+                      "name": "sum(on_time_pct)",
+                      "expression": "SUM(`on_time_pct`)"
+                    },
+                    {
+                      "name": "sum(avg_deviation)",
+                      "expression": "SUM(`avg_deviation`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Transit Reliability Trends by Day of Week",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "layer"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "day_of_week",
+                  "axis": {
+                    "title": "Day of Week",
+                    "labelAngle": 45
+                  },
+                  "displayName": "Day of Week",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                        "Saturday",
+                        "Sunday"
+                      ]
+                    }
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(on_time_pct)",
+                      "displayName": "On-time Percentage (%)"
+                    },
+                    {
+                      "fieldName": "sum(avg_deviation)",
+                      "displayName": "Average deviation from scheduled arrival time (minutes)"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "On-time percentage (%) & Average Deviation "
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 17,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "4687979a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b341d2e9",
+                  "fields": [
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    },
+                    {
+                      "name": "fetch_window",
+                      "expression": "`fetch_window`"
+                    },
+                    {
+                      "name": "sum(pct_on_time)",
+                      "expression": "SUM(`pct_on_time`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Time-of-Day Performance for the Most Schedule-Reliable Routes\n",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "layer"
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "fetch_window",
+                  "axis": {
+                    "title": "Fetch Window",
+                    "labelAngle": 45
+                  },
+                  "displayName": "Fetch Window",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(pct_on_time)",
+                  "axis": {
+                    "title": "Percentage (%) of being on time"
+                  },
+                  "displayName": "pct_on_time",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "route",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 50,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "dea55174",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "6a4fcf26",
+                  "fields": [
+                    {
+                      "name": "time_window",
+                      "expression": "`time_window`"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    },
+                    {
+                      "name": "sum(pct_on_time)",
+                      "expression": "SUM(`pct_on_time`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Busiest Bus Routes Performance by Time of Day",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": "Route Name"
+                  },
+                  "displayName": "Route Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(pct_on_time)",
+                  "axis": {
+                    "title": "On-Time Performance (%)"
+                  },
+                  "displayName": "pct_on_time",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "time_window",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "A. Morning (7am)",
+                        "color": "#F9DC40"
+                      },
+                      {
+                        "value": "B. Midday (12pm)",
+                        "color": "#42A1D7"
+                      },
+                      {
+                        "value": "C. Evening (5pm)",
+                        "color": "#FF905F"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 35,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "a3270892",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2c7feb57",
+                  "fields": [
+                    {
+                      "name": "sum(scheduled_wait)",
+                      "expression": "SUM(`scheduled_wait`)"
+                    },
+                    {
+                      "name": "sum(actual_wait)",
+                      "expression": "SUM(`actual_wait`)"
+                    },
+                    {
+                      "name": "route",
+                      "expression": "`route`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Scheduled vs Actual Bus Frequency",
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Comparison of scheduled and observed time between bus arrivals on high-frequency routes."
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 1
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ],
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(scheduled_wait)",
+                      "displayName": "Scheduled Waiting Time"
+                    },
+                    {
+                      "fieldName": "sum(actual_wait)",
+                      "displayName": "Actual Waiting Time"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "Scheduled vs Actual Wait Times"
+                  }
+                },
+                "y": {
+                  "fieldName": "route",
+                  "axis": {
+                    "title": " Route Name"
+                  },
+                  "displayName": " Route Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 43,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "52b35c42",
+            "queries": [
+              {
+                "name": "aecfab461196428c814f5f54e57cb4eb",
+                "query": {
+                  "datasetName": "98e05cf1",
+                  "fields": [
+                    {
+                      "name": "delay_category",
+                      "expression": "`delay_category`"
+                    },
+                    {
+                      "name": "column_f6a5759f420",
+                      "expression": "SUM(`stop_visits`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 0,
+              "viz_spec": {
+                "display_name": "Network Delay Distribution - 1.4M Stop Visits Analyzed",
+                "viz_type": "CHART",
+                "serialized_options": "{\"isAggregationOn\":true,\"series\":{\"error_y\":{\"type\":\"data\",\"visible\":true},\"stacking\":null},\"coefficient\":1,\"yAxis\":[{\"type\":\"-\"},{\"opposite\":true,\"type\":\"-\"}],\"columnConfigurationMap\":{\"x\":{\"column\":\"delay_category\",\"id\":\"column_f6a5759f419\"},\"y\":[{\"column\":\"stop_visits\",\"id\":\"column_f6a5759f420\",\"transform\":\"SUM\"}]},\"alignYAxesAtZero\":true,\"direction\":{\"type\":\"counterclockwise\"},\"swappedAxes\":false,\"percentFormat\":\"0[.]00%\",\"textFormat\":\"\",\"legend\":{\"traceorder\":\"normal\"},\"globalSeriesType\":\"column\",\"version\":2,\"sizemode\":\"diameter\",\"seriesOptions\":{\"column_f6a5759f420\":{\"color\":\"#FF3621\",\"name\":\"Stop Visits\",\"type\":\"column\",\"yAxis\":0}},\"error_y\":{\"type\":\"data\",\"visible\":true},\"sortX\":false,\"showDataLabels\":false,\"missingValuesAsZero\":true,\"useAggregationsUi\":true,\"numberFormat\":\"0,0.[00000]\",\"dateTimeFormat\":\"DD/MM/YYYY HH:mm\",\"sortY\":true,\"valuesOptions\":{},\"xAxis\":{\"labels\":{\"enabled\":true},\"title\":{\"text\":\"Delay Category\"},\"type\":\"-\"}}",
+                "query_name": "aecfab461196428c814f5f54e57cb4eb"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
